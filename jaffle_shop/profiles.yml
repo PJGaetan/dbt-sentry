@@ -1,0 +1,10 @@
+config:
+  send_anonymous_usage_stats: False
+
+# example profiles.yml file
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: dbt.duckdb

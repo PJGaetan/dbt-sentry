@@ -1,0 +1,18 @@
+# generate basic gitignore
+# https://git-scm.com/docs/gitignore
+
+.DS_Store
+.idea/
+*.iml
+*.ipynb_checkpoints
+*.ipynb
+*.ipynb_checkpoints
+*.pyc
+*.swp
+
+logs/
+dbt_packages/
+
+target/
+dbt_modules/
+**/.DS_Store

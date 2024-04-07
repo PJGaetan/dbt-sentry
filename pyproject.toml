@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "dbt-sentry"
+version = "0.1.0"
+description = ""
+authors = ["Gaëtan Pierre-Justin <pjgaetan@hotmail.fr>"]
+readme = "README.md"
+license = "MIT"
+packages = [
+    { include = "dbt_sentry" },
+]
+
+
+[tool.poetry.scripts]
+dbts = 'dbt_sentry.main:cli'
+dbt-sentry = 'dbt_sentry.main:cli'
+
+[tool.poetry.dependencies]
+python = "^3.10"
+dbt-snowflake = "^1.7.3"
+dbt-duckdb = "^1.7.3"
+click = "^8.1.7"
+gitpython = "^3.1.43"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
