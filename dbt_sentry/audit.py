@@ -1,8 +1,16 @@
 import click
 from agate import Table
 from .options import global_test_options, GlobalTestOptions
-from .template_query import PROFILE_QUERY, COMPARE_COLUMNS_QUERY, COLUMNS_PROFILE_QUERY, COMPARE_RELATION_QUERY
-from .utils import walk_dbt_project, grouper
+from .template_query import (
+    PROFILE_QUERY,
+    COMPARE_COLUMNS_QUERY,
+    COLUMNS_PROFILE_QUERY,
+    COMPARE_RELATION_QUERY,
+    COMPARE_METRICS_QUERY,
+    TEMPLATED_METRICS_JINJA_QUERY,
+)
+from .utils import walk_dbt_project, grouper, get_files, File
+import os
 from .query_runner import QueryRunner
 
 
@@ -41,6 +49,7 @@ def profile(model, target, profile, dbt_path, debug):
 @click.argument("model", nargs=1)
 @global_test_options
 def compare_model(model, target, profile, dbt_path, debug):
+    """Compare columns and relations of a model."""
     walk_dbt_project(dbt_path, debug)
 
     qr = QueryRunner(debug, target, profile)
@@ -69,6 +78,7 @@ def compare_model(model, target, profile, dbt_path, debug):
 @click.argument("model", nargs=1)
 @global_test_options
 def compare_rows(target, profile, dbt_path, model, debug):
+    """Compare the rows difference a model."""
     walk_dbt_project(dbt_path, debug)
     qr = QueryRunner(debug, target, profile)
 
@@ -90,13 +100,43 @@ def compare_rows(target, profile, dbt_path, model, debug):
 
 
 @audit.command()
+@click.argument("model", nargs=1)
+@click.argument("metric", nargs=1)
+@click.argument("dimensions", nargs=-1)
 @global_test_options
-def metric(target, profile, dbt_path):
+def metric(target, profile, dbt_path, debug, model, metric, dimensions):
     """Audit the trend of a specific metrics in dbt."""
-    pass
+    walk_dbt_project(dbt_path, debug)
+    qr = QueryRunner(debug, target, profile)
+
+    # Filter missing columns
+    columns_to_replace = f"""'{"','".join(dimensions)}'"""
+    metric_to_replace = f"'{metric}'"
+    query = (
+        TEMPLATED_METRICS_JINJA_QUERY.replace("PLACEHOLDER_MODEL_NAME", model)
+        .replace("COLUMNS_TO_REPLACE", columns_to_replace)
+        .replace("METRICS_TO_REPLACE", metric_to_replace)
+    )
+    table = qr.run_query(query)
+    table.print_table(max_rows=None, max_columns=7)
 
 
 @audit.command()
+@click.argument("path", nargs=1)
+@click.option("-R", "--recursive", is_flag=True, help="Recursively search for dbt files")
 @global_test_options
-def custom(target, profile, dbt_path):
-    pass
+def custom(target, profile, dbt_path, debug, path, recursive):
+    """Run custom queries on a dbt project."""
+    if recursive and os.path.isdir(path):
+        files = get_files(path)
+    elif os.path.isdir(path) and not recursive:
+        raise click.ClickException(f"Directory {path} is not a file.")
+    elif not os.path.exists(path) or not os.path.isfile(path):
+        raise click.ClickException(f"File {path} does not exist")
+    else:
+        files = [File(content=open(path, "r").read(), name=path)]
+    walk_dbt_project(dbt_path, debug)
+    qr = QueryRunner(debug, target, profile)
+    for f in files:
+        table = qr.run_query(f.content)
+        print_agate_table(table)

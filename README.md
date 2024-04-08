@@ -61,6 +61,16 @@ dbts generate
 dbts ci gitlab/github
 ```
 
+## TODO
+- better input filter 
+    - git to determine what changed
+    - ask for two target or override manifest or specify table
+
+- better ouput generation
+    - file
+    - stdout
+    - store in dbt
+
 
 ## Contributing
 

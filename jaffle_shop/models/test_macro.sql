@@ -1,22 +1,6 @@
-{% set old_fct_orders_query %}
-  select
-        last_name,
-	count(first_name) as cnt
-    from {{ ref('stg_customers') }} 
-    group by last_name
-{% endset %}
-
-{% set new_fct_orders_query %}
-    select
-        last_name,
-	count(first_name) as cnt
-    from "dbt"."main"."stg_customers"
-    group by last_name
-{% endset %}
-
 {{ compare_columns_metrics(
-    a_query=old_fct_orders_query,
-    b_query=new_fct_orders_query,
+    a_relation=ref('stg_customers'),
+    b_relation=api.Relation.create(database='dbt', schema='main', identifier='test_2'),
     columns=["last_name"],
-    metrics=["cnt"]
+    metrics=["count(*)"]
 ) }}

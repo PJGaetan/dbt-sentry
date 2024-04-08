@@ -1,19 +1,55 @@
-{% macro compare_columns_metrics(a_query, b_query, columns=[], metrics=[]) -%}
-    {{ return(adapter.dispatch('compare_columns_metrics')(a_query, b_query, columns, metrics)) }}
+{% macro compare_columns_metrics(a_relation, b_relation, columns=[], metrics=[]) -%}
+    {{ return(adapter.dispatch('compare_columns_metrics')(a_relation, b_relation, columns, metrics)) }}
 {%- endmacro %}
 
-{% macro default__compare_columns_metrics(a_query, b_query, columns=[], metrics=[]) %}
+{% macro default__compare_columns_metrics(a_relation, b_relation, columns=[], metrics=[]) %}
+    
     
     
 with a as (
 
-    {{ a_query }}
+    select
+    {% for column_name in columns %} 
+        {{ adapter.quote(column_name) }}, 
+    {% endfor %}
+    {% for metric in metrics %} 
+        {{ metric }} as "{{ loop.index0 }}_{{ metric }}",
+          {% if not loop.last %}
+            , 
+          {% endif %} 
+    {% endfor %}
+    from {{ a_relation }}
+    group by 
+    {% for column_name in columns %}
+        {{ adapter.quote(column_name) }}
+        {% if not loop.last %}
+          ,
+        {% endif %} 
+    {% endfor %}
+    
 
 ),
 
 b as (
 
-    {{ b_query }}
+    select
+    {% for column_name in columns %} 
+        {{ adapter.quote(column_name) }}, 
+    {% endfor %}
+    {% for metric in metrics %} 
+        {{ metric }} as "{{ loop.index0 }}_{{ metric }}",
+          {% if not loop.last %}
+            , 
+          {% endif %} 
+    {% endfor %}
+    from {{ b_relation }}
+    group by 
+    {% for column_name in columns %}
+        {{ adapter.quote(column_name) }}
+        {% if not loop.last %}
+          ,
+        {% endif %} 
+    {% endfor %}
 
 ),
 
@@ -21,26 +57,25 @@ final as (
 
     select
     {% for column_name in columns %} 
-	    a.{{ adapter.quote(column_name) }}, 
+	    COALESCE(a.{{ adapter.quote(column_name) }}, b.{{ adapter.quote(column_name) }}) as {{ adapter.quote(column_name) }}, 
     {% endfor %}
     {% for metric in metrics %} 
-         a.{{ metric }} as a_{{ metric }},
-	 b.{{ metric }} as b_{{ metric }},
-	(a_{{ metric }} - b_{{ metric }})*100.0 / b_{{ metric }} as {{ metric }}_diff
-      {% if not loop.last %}
-        , 
-      {% endif %} 
+             a."{{ loop.index0 }}_{{ metric }}" as "a_{{ metric }}",
+             b."{{ loop.index0 }}_{{ metric }}" as "b_{{ metric }}",
+            (a."{{ loop.index0 }}_{{ metric }}"  - b."{{ loop.index0 }}_{{ metric }}" )*100.0 / b."{{ loop.index0 }}_{{ metric }}" as "{{ metric }}_diff"
+          {% if not loop.last %}
+            , 
+          {% endif %} 
     {% endfor %}
 
     from a
-    inner join b on
-    {% for column_name in columns %} 
+    full outer join b on
+    {% for column_name in columns %}
         a.{{ adapter.quote(column_name) }} = b.{{ adapter.quote(column_name) }}
-    {% if not loop.last %}
-      AND 
-    {% endif %} 
-{% endfor %}
-
+        {% if not loop.last %}
+          AND 
+        {% endif %}
+    {% endfor %}
 
 )
 
