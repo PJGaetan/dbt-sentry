@@ -2,16 +2,56 @@ import click
 from dbt.cli.main import dbtRunner, dbtRunnerResult
 from dbt.contracts.graph.manifest import Manifest
 import agate
+import os
+
+
+def is_dbt_project(debug) -> bool:
+    """
+    Check if the current directory is a dbt project.
+    If not, exit with an error.
+    """
+
+    is_dbt_project = False
+    if debug:
+        print(f"Searching for dbt project in : {os.getcwd()}")
+    for _, _, filenames in os.walk("."):
+        for f in filenames:
+            if f.endswith("dbt_project.yml"):
+                is_dbt_project = True
+                break
+
+        if not is_dbt_project:
+            print(f"dbt project not found in {os.getcwd()}")
+            return False
+        break
+    return True
 
 
 class QueryRunner:
-    def __init__(self, debug: bool, target: str, profile: str):
+    def __init__(self, debug: bool, target: str, profile: str, dbt_path: str):
         self.debug = debug
         self.target = target
         self.profile = profile
+        self.dbt_path = dbt_path
         self.manifest = None
 
-    def generate_manifest(self):
+    def _run_invoke(self, dbt: dbtRunner, cli_args):
+        current_path = os.getcwd()
+
+        os.chdir(self.dbt_path)
+        is_dbt = is_dbt_project(self.debug)
+        if not is_dbt:
+            exit(1)
+
+        if self.debug:
+            click.echo(f"dbt command : {cli_args}")
+
+        res: dbtRunnerResult = dbt.invoke(cli_args)
+        os.chdir(current_path)
+
+        return res
+
+    def generate_manifest(self, target: str, profile: str) -> Manifest:
         """
         Generate a Manifest from a dbt project.
 
@@ -21,18 +61,19 @@ class QueryRunner:
             "parse",
             "--log-level",
             "none",
-            *(["--profile", self.profile] if self.profile is not None else []),
-            *(["--target", self.target] if self.target is not None else []),
+            *(["--profile", profile] if profile is not None else []),
+            *(["--target", target] if target is not None else []),
         ]
 
         # use 'parse' command to load a Manifest
-        res: dbtRunnerResult = dbtRunner().invoke(cmd)
+        dbt = dbtRunner()
+        res = self._run_invoke(dbt, cmd)
         manifest: Manifest = res.result
 
         if self.debug:
             print("generated manifest.")
 
-        self.manifest = manifest
+        return manifest
 
     def run_query(self, query: str) -> agate.Table:
         """
@@ -42,7 +83,8 @@ class QueryRunner:
         """
 
         if self.manifest is None:
-            self.generate_manifest()
+            manifest = self.generate_manifest(self.target, self.profile)
+            self.manifest = manifest
 
         # initialize
         dbt = dbtRunner(manifest=self.manifest)
@@ -57,7 +99,7 @@ class QueryRunner:
         ]
 
         # run the command
-        res: dbtRunnerResult = dbt.invoke(cli_args)
+        res = self._run_invoke(dbt, cli_args)
 
         if not res.success:
             click.echo(res.exception)

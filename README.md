@@ -6,71 +6,64 @@ Inspired by former
 It uses `dbt` python biding, and make use of `dbt show` to execute inline test.
 Reuse manifest to save waiting time.
 
-### Type of tests
-- profiling : https://github.com/data-mie/dbt-profiler
-- table difference a'la data-diff : https://hub.getdbt.com/dbt-labs/audit_helper/latest/
-- Trend difference
-    - GROUP BY
-    - Perc diff
-    - Chart to show that ?
+## Compare & analyse
 
-### Test selection
-- manual : -s select specific model
-- git based 
-    - get file changed
-    - capture what model are tested in a test (using `compile` and refs)
-    - run all test concerning models that could be altered based on model changed (`dbt list model1+ model2+` to get a list)
-
-### Output generated
-- Markdown file : https://github.com/didix21/mdutils
-
-Format
-```md
-# DBT CI tests
-
-## Table profiling
-
-## Compare
-```
-- csv to share
-- png to share
-- stdout
-
-### CI Integration
-> have a `cli ci gitlab`
-> or `cli ci github` kind of cmd
-  - gitlab : https://engineering.dunelm.com/how-to-post-a-custom-message-to-your-merge-request-using-gitlabci-3551824a1e5b
-  - github
-
-## CMD
+Table profiling
 
 ```sh
-# print to stdout
-dbts test profile
-dbts test compare
-# group by an non group by are essentially the same
-# group by just has multiple columns
-# and multiple metrics
-# I can refacto this into one main 
-# TODO: add capability to have non present key (FULL OUTER JOIN)
-dbts test scpecific (add capability to run custom test if wanted)
-
-# generate artefact
-dbts generate
-# push to github/gitlab hooks
-dbts ci gitlab/github
+dbts audit profile stg_customers --target-compare prd
 ```
+
+Compare model
+
+```sh
+dbts audit compare-model stg_customers --target-compare prd
+```
+
+Compare row by row (you can also provide a path to the manifest to use for comparison directly).
+
+```sh
+dbts audit compare-rows stg_customers --manifest-compare-path m.json
+```
+
+Compare metric /w group by 
+
+```sh
+dbts audit metric customers "sum(number_of_orders)" last_name --dbt-path jaffle_shop --target-compare prd
+```
+
+Custom test, you can provide a directory with `-R`.
+```sh
+dbts audit custom testci -R 
+```
+
+## CI Integration
+
+IN PROGRESS
+
+```sh
+dbts ci generate
+dbts ci gitlab
+dbts ci github
+```
+- gitlab : https://engineering.dunelm.com/how-to-post-a-custom-message-to-your-merge-request-using-gitlabci-3551824a1e5b
+- github
 
 ## TODO
 - better input filter 
     - git to determine what changed
-    - ask for two target or override manifest or specify table
+        - get file changed
+        - capture what model are tested in a test (using `compile` and refs)
+        - run all test concerning models that could be altered based on model changed (`dbt list model1+ model2+` to get a list)
+    - parse run_result to see what was the last tables run
+    - [x] ask for two target or override manifest or specify table
+    - [x] manual model selection : -s select specific model
 
 - better ouput generation
     - file
-    - stdout
+        - Markdown file : https://github.com/didix21/mdutils
+    - [x] stdout
     - store in dbt
-
 
 ## Contributing
 

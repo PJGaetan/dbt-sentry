@@ -40,7 +40,7 @@ COMPARE_METRICS_QUERY = """
 """
 
 TEMPLATED_METRICS_JINJA_QUERY = """
-{% set a_relation = api.Relation.create(database='dbt', schema='main', identifier='test_2') %}
+{% set a_relation = RELATION_TO_REPLACE %}
 {% set b_relation = ref('PLACEHOLDER_MODEL_NAME') %}
 {% set metrics = [METRICS_TO_REPLACE] %}
 {% set columns = [COLUMNS_TO_REPLACE] %}

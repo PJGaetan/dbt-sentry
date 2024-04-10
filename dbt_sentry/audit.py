@@ -1,26 +1,10 @@
 import click
-from agate import Table
-from .options import global_test_options, GlobalTestOptions
-from .template_query import (
-    PROFILE_QUERY,
-    COMPARE_COLUMNS_QUERY,
-    COLUMNS_PROFILE_QUERY,
-    COMPARE_RELATION_QUERY,
-    COMPARE_METRICS_QUERY,
-    TEMPLATED_METRICS_JINJA_QUERY,
-)
-from .utils import walk_dbt_project, grouper, get_files, File
+from .options import global_test_options, GlobalTestOptions, global_compare_options, GlobalCompareOptions
+from .output_formatter import OutputFormatter
+from .utils import get_files, File
 import os
 from .query_runner import QueryRunner
-
-
-def print_agate_table(table: Table):
-    columns = table.column_names
-    col_grouped = grouper(columns[1:], 5)
-    for col in col_grouped:
-        t = table.select([columns[0], *[c for c in col if c is not None]])
-        t.print_table(max_rows=None, max_columns=6)
-        print("\n")
+from .query_builder import QueryBuilder
 
 
 @click.group()
@@ -32,101 +16,134 @@ def audit():
 @audit.command()
 @click.argument("model", nargs=1)
 @global_test_options
-def profile(model, target, profile, dbt_path, debug):
+def profile(model, **kwargs):
     """Generate the profile of a dbt model.
 
     Depends on dbt package data-mie/dbt-profiler.
     """
-    profile_query = PROFILE_QUERY.replace("PLACEHOLDER_MODEL_NAME", model)
+    options = GlobalTestOptions(**kwargs)
 
-    walk_dbt_project(dbt_path, debug)
-    qr = QueryRunner(debug, target, profile)
-    table = qr.run_query(profile_query)
-    print_agate_table(table)
+    qr = QueryRunner(options.debug, options.target, options.profile, options.dbt_path)
+    qb = QueryBuilder(model, None)
+    query = qb.profile_query()
+    table = qr.run_query(query)
+
+    OutputFormatter.print_agate_table(table)
 
 
 @audit.command()
 @click.argument("model", nargs=1)
+@global_compare_options
 @global_test_options
-def compare_model(model, target, profile, dbt_path, debug):
+def compare_model(model, **kwargs):
     """Compare columns and relations of a model."""
-    walk_dbt_project(dbt_path, debug)
+    options = GlobalTestOptions(**kwargs)
+    compare_options = GlobalCompareOptions(**kwargs)
+    qr = QueryRunner(options.debug, options.target, options.profile, options.dbt_path)
 
-    qr = QueryRunner(debug, target, profile)
+    relation_base, manifest_base = compare_options.get_relations_base(model, options.target, options.profile, qr)
+    relation_compare, _ = compare_options.get_relations_compare(model, options.profile, qr)
+    qr.manifest = manifest_base
 
-    # TODO: only print
-    # Better would be to go for added and removed
+    qb = QueryBuilder(model, relation_compare.get_dbt_relation())
+
     # a: table_name_one && b: table_name_two
+    OutputFormatter.print_compared_relation(relation_base, relation_compare)
+    query = qb.compare_columns_query()
+    table = qr.run_query(query)
+    not_in_both_columns = []
+    not_in_a = []
+    not_in_b = []
+    for row in table.rows:
+        if row.get("in_a") == False:
+            not_in_a.append(row.get("column_name"))
+        if row.get("in_b") == False:
+            not_in_b.append(row.get("column_name"))
+        if row.get("in_both") == False:
+            not_in_both_columns.append(row.get("column_name"))
     # Column(s) not in a: [list of columns]
     # Column(s) not in b: [list of columns]
-    query = COLUMNS_PROFILE_QUERY.replace("PLACEHOLDER_MODEL_NAME", model)
-    table = qr.run_query(query)
-    print_agate_table(table)
-    not_in_both_columns = []
-    for row in table.rows:
-        if row.get("in_both") == False:
-            not_in_both_columns.append(row.get("column_name"))
+    OutputFormatter.print_excluded_columns(not_in_a, not_in_b)
 
-    # Filter missing columns
-    excluded_columns = "" if len(not_in_both_columns) == 0 else f"""'{"','".join(not_in_both_columns)}'"""
-    query = COMPARE_COLUMNS_QUERY.replace("PLACEHOLDER_MODEL_NAME", model).replace("EXCLUDED_COLUMNS", excluded_columns)
+    query = qb.compare_model_query(not_in_both_columns)
     table = qr.run_query(query)
-    table.print_table(max_rows=None, max_columns=7)
+    OutputFormatter.print_agate_table(table, format=False)
 
 
 @audit.command()
 @click.argument("model", nargs=1)
+@global_compare_options
 @global_test_options
-def compare_rows(target, profile, dbt_path, model, debug):
+def compare_rows(model, **kwargs):
     """Compare the rows difference a model."""
-    walk_dbt_project(dbt_path, debug)
-    qr = QueryRunner(debug, target, profile)
+    options = GlobalTestOptions(**kwargs)
+    compare_options = GlobalCompareOptions(**kwargs)
+    qr = QueryRunner(options.debug, options.target, options.profile, options.dbt_path)
 
-    query = COLUMNS_PROFILE_QUERY.replace("PLACEHOLDER_MODEL_NAME", model)
+    relation_base, manifest_base = compare_options.get_relations_base(model, options.target, options.profile, qr)
+    relation_compare, _ = compare_options.get_relations_compare(model, options.profile, qr)
+    qr.manifest = manifest_base
+
+    qb = QueryBuilder(model, relation_compare.get_dbt_relation())
+
+    OutputFormatter.print_compared_relation(relation_base, relation_compare)
+    query = qb.compare_columns_query()
     table = qr.run_query(query)
     not_in_both_columns = []
+    not_in_a = []
+    not_in_b = []
     for row in table.rows:
+        if row.get("in_a") == False:
+            not_in_a.append(row.get("column_name"))
+        if row.get("in_b") == False:
+            not_in_b.append(row.get("column_name"))
         if row.get("in_both") == False:
             not_in_both_columns.append(row.get("column_name"))
-    click.echo("Excluded column(s): " + ", ".join(not_in_both_columns))
+    # Column(s) not in a: [list of columns]
+    # Column(s) not in b: [list of columns]
+    OutputFormatter.print_excluded_columns(not_in_a, not_in_b)
 
     # Filter missing columns
-    excluded_columns = "" if len(not_in_both_columns) == 0 else f"""'{"','".join(not_in_both_columns)}'"""
-    query = COMPARE_RELATION_QUERY.replace("PLACEHOLDER_MODEL_NAME", model).replace(
-        "EXCLUDED_COLUMNS", excluded_columns
-    )
+    query = qb.compare_rows_query(not_in_both_columns)
     table = qr.run_query(query)
-    table.print_table(max_rows=None, max_columns=7)
+    OutputFormatter.print_agate_table(table, format=False)
 
 
 @audit.command()
 @click.argument("model", nargs=1)
 @click.argument("metric", nargs=1)
 @click.argument("dimensions", nargs=-1)
+@global_compare_options
 @global_test_options
-def metric(target, profile, dbt_path, debug, model, metric, dimensions):
+def metric(model, metric, dimensions, **kwargs):
     """Audit the trend of a specific metrics in dbt."""
-    walk_dbt_project(dbt_path, debug)
-    qr = QueryRunner(debug, target, profile)
 
-    # Filter missing columns
-    columns_to_replace = f"""'{"','".join(dimensions)}'"""
-    metric_to_replace = f"'{metric}'"
-    query = (
-        TEMPLATED_METRICS_JINJA_QUERY.replace("PLACEHOLDER_MODEL_NAME", model)
-        .replace("COLUMNS_TO_REPLACE", columns_to_replace)
-        .replace("METRICS_TO_REPLACE", metric_to_replace)
-    )
+    options = GlobalTestOptions(**kwargs)
+    compare_options = GlobalCompareOptions(**kwargs)
+    qr = QueryRunner(options.debug, options.target, options.profile, options.dbt_path)
+
+    relation_base, manifest_base = compare_options.get_relations_base(model, options.target, options.profile, qr)
+    relation_compare, _ = compare_options.get_relations_compare(model, options.profile, qr)
+    qr.manifest = manifest_base
+
+    OutputFormatter.print_compared_relation(relation_base, relation_compare)
+
+    qb = QueryBuilder(model, relation_compare.get_dbt_relation())
+    query = qb.metrics_query(metric, dimensions)
     table = qr.run_query(query)
-    table.print_table(max_rows=None, max_columns=7)
+    OutputFormatter.print_agate_table(table, format=True)
 
 
 @audit.command()
 @click.argument("path", nargs=1)
 @click.option("-R", "--recursive", is_flag=True, help="Recursively search for dbt files")
 @global_test_options
-def custom(target, profile, dbt_path, debug, path, recursive):
+def custom(path, recursive, **kwargs):
     """Run custom queries on a dbt project."""
+
+    options = GlobalTestOptions(**kwargs)
+    qr = QueryRunner(options.debug, options.target, options.profile, options.dbt_path)
+
     if recursive and os.path.isdir(path):
         files = get_files(path)
     elif os.path.isdir(path) and not recursive:
@@ -135,8 +152,7 @@ def custom(target, profile, dbt_path, debug, path, recursive):
         raise click.ClickException(f"File {path} does not exist")
     else:
         files = [File(content=open(path, "r").read(), name=path)]
-    walk_dbt_project(dbt_path, debug)
-    qr = QueryRunner(debug, target, profile)
+
     for f in files:
         table = qr.run_query(f.content)
-        print_agate_table(table)
+        OutputFormatter.print_agate_table(table)

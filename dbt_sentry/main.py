@@ -1,6 +1,5 @@
 import click
 
-from .utils import run_queries, get_files
 from .generate import generate
 from .ci import ci
 from .audit import audit
