@@ -1,6 +1,7 @@
 import agate
 import click
 from itertools import zip_longest
+import io
 from .utils import Relation
 
 
@@ -14,15 +15,23 @@ class OutputFormatter:
     @staticmethod
     def print_agate_table(table: agate.Table, format: bool = True):
         if not format:
-            table.print_table(max_rows=None, max_columns=None)
+            buff = io.StringIO()
+            table.print_table(max_rows=None, max_columns=None, output=buff)
+            buff.close()
+            click.echo(table_value)
+            click.echo("\n")
             return
 
+        buff = io.StringIO()
         columns = table.column_names
         col_grouped = grouper(columns[1:], 5)
         for col in col_grouped:
             t = table.select([columns[0], *[c for c in col if c is not None]])
-            t.print_table(max_rows=None, max_columns=6)
-            print("\n")
+            t.print_table(max_rows=None, max_columns=6, output=buff)
+            buff.write("\n")
+        table_value = buff.getvalue()
+        buff.close()
+        click.echo(table_value)
 
     @staticmethod
     def print_compared_relation(model: Relation, model_compare: Relation):

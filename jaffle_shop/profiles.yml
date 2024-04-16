@@ -8,3 +8,8 @@ jaffle_shop:
     dev:
       type: duckdb
       path: dbt.duckdb
+      schema: main
+    prd:
+      type: duckdb
+      path: dbt.duckdb
+      schema: prd
