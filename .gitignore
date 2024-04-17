@@ -16,3 +16,5 @@ dbt_packages/
 target/
 dbt_modules/
 **/.DS_Store
+jaffle_shop/dbts-artefact
+pytestdebug.log
