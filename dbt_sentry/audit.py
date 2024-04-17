@@ -3,7 +3,7 @@ import click
 from dbt_sentry.artefact.manifest import Manifest
 from dbt_sentry.client import Client
 from dbt_sentry.settings import SettingsOptions, settings_options
-from .options import global_head_options, GlobalHeadOptions, global_compare_options, GlobalCompareOptions
+from .options import global_head_options, GlobalHeadOptions, global_compare_options, GlobalCompareOptions, primary_key
 from .output_formatter import OutputFormatter
 from .utils import get_files, File
 import os
@@ -34,19 +34,19 @@ def profile(model, **kwargs):
 @settings_options
 @global_head_options
 @global_compare_options
-def compare_model(model, **kwargs):
+@primary_key
+def compare_model(model, primary_key, **kwargs):
     """Compare columns and relations of a model."""
     client = Client.from_options(**kwargs)
 
     relation_head = client._get_relation_from_name(model, "head")
     relation_compare = client._get_relation_from_name(model, "compare")
 
-    # a: table_name_one && b: table_name_two
-    OutputFormatter.print_compared_relation(relation_head, relation_compare)
     table = client.run_compare_columns(model)
     not_in_both_columns = []
     not_in_a = []
     not_in_b = []
+    columns = []
     for row in table.rows:
         if row.get("in_a") == False:
             not_in_a.append(row.get("column_name"))
@@ -54,11 +54,22 @@ def compare_model(model, **kwargs):
             not_in_b.append(row.get("column_name"))
         if row.get("in_both") == False:
             not_in_both_columns.append(row.get("column_name"))
+        else:
+            columns.append(row.get("column_name").lower())
+    if primary_key.lower() not in columns:
+        raise click.ClickException(
+            f"Primary key {primary_key} not a columns in both tables {relation_head} && {relation_compare}"
+        )
+    table = client.run_compare_model(model, primary_key, not_in_both_columns)
+
+    # PRINTING
+
+    # a: table_name_one && b: table_name_two
+    OutputFormatter.print_compared_relation(relation_head, relation_compare)
     # Column(s) not in a: [list of columns]
     # Column(s) not in b: [list of columns]
     OutputFormatter.print_excluded_columns(not_in_a, not_in_b)
 
-    table = client.run_compare_model(model, not_in_both_columns)
     OutputFormatter.print_agate_table(table, format=False)
 
 
@@ -67,18 +78,19 @@ def compare_model(model, **kwargs):
 @settings_options
 @global_compare_options
 @global_head_options
-def compare_rows(model, **kwargs):
+@primary_key
+def compare_rows(model, primary_key, **kwargs):
     """Compare the rows difference a model."""
     client = Client.from_options(**kwargs)
 
     relation_head = client._get_relation_from_name(model, "head")
     relation_compare = client._get_relation_from_name(model, "compare")
 
-    OutputFormatter.print_compared_relation(relation_head, relation_compare)
     table = client.run_compare_columns(model)
     not_in_both_columns = []
     not_in_a = []
     not_in_b = []
+    columns = []
     for row in table.rows:
         if row.get("in_a") == False:
             not_in_a.append(row.get("column_name"))
@@ -86,12 +98,24 @@ def compare_rows(model, **kwargs):
             not_in_b.append(row.get("column_name"))
         if row.get("in_both") == False:
             not_in_both_columns.append(row.get("column_name"))
+        else:
+            columns.append(row.get("column_name"))
+
+    if primary_key.lower() not in columns:
+        raise click.ClickException(
+            f"Primary key {primary_key} not a columns in both tables {relation_head} && {relation_compare}"
+        )
+
+    table = client.run_compare_rows(model, primary_key, not_in_both_columns)
+
+    # PRINTING
+
+    OutputFormatter.print_compared_relation(relation_head, relation_compare)
     # Column(s) not in a: [list of columns]
     # Column(s) not in b: [list of columns]
     OutputFormatter.print_excluded_columns(not_in_a, not_in_b)
 
     # Filter missing columns
-    table = client.run_compare_rows(model, not_in_both_columns)
     OutputFormatter.print_agate_table(table, format=False)
 
 
@@ -106,6 +130,9 @@ def metric(model, metric, dimensions, **kwargs):
     """Audit the trend of a specific metrics in dbt."""
 
     client = Client.from_options(**kwargs)
+
+    if len(dimensions) == 0:
+        raise click.ClickException("Please specify at least one dimension")
 
     relation_head = client._get_relation_from_name(model, "head")
     relation_compare = client._get_relation_from_name(model, "compare")

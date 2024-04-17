@@ -16,7 +16,11 @@ renamed as (
         payment_method,
 
         -- `amount` is currently stored in cents, so we convert it to dollars
-        amount / 100 as amount
+        {% if target.name == 'dev' %}
+            amount / 100 as amount
+        {% else %}
+            amount as amount
+        {% endif %}
 
     from source
 

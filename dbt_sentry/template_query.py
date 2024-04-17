@@ -2,13 +2,13 @@ PROFILE_QUERY = """
 {{ dbt_profiler.get_profile(relation=ref("PLACEHOLDER_MODEL_NAME")) }}
 """
 
-COMPARE_COLUMNS_QUERY = """
+COMPARE_MODEL_QUERY = """
 {{ 
   audit_helper.compare_all_columns(
     a_relation=ref('PLACEHOLDER_MODEL_NAME'),
     b_relation=RELATION_TO_REPLACE,
     exclude_columns=[EXCLUDED_COLUMNS],
-    primary_key='customer_id'
+    primary_key='PRIMARY_KEY'
   ) 
 }}
 """
@@ -20,13 +20,13 @@ COLUMNS_PROFILE_QUERY = """
 ) }}
 """
 
-COMPARE_RELATION_QUERY = """
+COMPARE_ROWS_QUERY = """
 {{ audit_helper.compare_relations(
     a_relation=RELATION_TO_REPLACE,
     b_relation=ref('PLACEHOLDER_MODEL_NAME'),
     exclude_columns=[EXCLUDED_COLUMNS],
     summarize=false,
-    primary_key="customer_id"
+    primary_key="PRIMARY_KEY"
 ) }}
 """
 

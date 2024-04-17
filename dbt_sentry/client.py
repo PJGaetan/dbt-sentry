@@ -9,9 +9,9 @@ from dbt_sentry.utils import run_invoke, run_invoke_capture_io, Relation
 from dbt_sentry.options import GlobalHeadOptions, GlobalCompareOptions
 from dbt_sentry.template_query import (
     PROFILE_QUERY,
-    COMPARE_COLUMNS_QUERY,
+    COMPARE_MODEL_QUERY,
     COLUMNS_PROFILE_QUERY,
-    COMPARE_RELATION_QUERY,
+    COMPARE_ROWS_QUERY,
     TEMPLATED_METRICS_JINJA_QUERY,
 )
 
@@ -147,7 +147,7 @@ class Client:
         )
         return self._run_query(query)
 
-    def run_compare_model(self, model: str, excluded_columns: list[str]) -> agate.Table:
+    def run_compare_model(self, model: str, primary_key: str, excluded_columns: list[str]) -> agate.Table:
         """
         Run a compare query on dbt tables.
 
@@ -159,13 +159,14 @@ class Client:
         model_compare = self._get_relation_from_name(model, index="compare")
         excluded_columns_str = "" if len(excluded_columns) == 0 else f"""'{"','".join(excluded_columns)}'"""
         query = (
-            COMPARE_COLUMNS_QUERY.replace("PLACEHOLDER_MODEL_NAME", model_head.name)
+            COMPARE_MODEL_QUERY.replace("PLACEHOLDER_MODEL_NAME", model_head.name)
             .replace("RELATION_TO_REPLACE", model_compare.get_dbt_relation())
             .replace("EXCLUDED_COLUMNS", excluded_columns_str)
+            .replace("PRIMARY_KEY", primary_key)
         )
         return self._run_query(query)
 
-    def run_compare_rows(self, model: str, excluded_columns: list[str]) -> agate.Table:
+    def run_compare_rows(self, model: str, primary_key: str, excluded_columns: list[str]) -> agate.Table:
         """
         Run a compare rows query on dbt tables.
 
@@ -177,9 +178,10 @@ class Client:
         model_compare = self._get_relation_from_name(model, index="compare")
         excluded_columns_str = "" if len(excluded_columns) == 0 else f"""'{"','".join(excluded_columns)}'"""
         query = (
-            COMPARE_RELATION_QUERY.replace("PLACEHOLDER_MODEL_NAME", model_head.name)
+            COMPARE_ROWS_QUERY.replace("PLACEHOLDER_MODEL_NAME", model_head.name)
             .replace("RELATION_TO_REPLACE", model_compare.get_dbt_relation())
             .replace("EXCLUDED_COLUMNS", excluded_columns_str)
+            .replace("PRIMARY_KEY", primary_key)
         )
         return self._run_query(query)
 

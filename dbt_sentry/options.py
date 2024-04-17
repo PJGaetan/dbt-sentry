@@ -43,3 +43,6 @@ class GlobalCompareOptions:
     def __init__(self, **kwargs):
         self.target_compare = kwargs.get("target_compare")
         self.manifest_compare_path = kwargs.get("manifest_compare_path")
+
+
+primary_key = click.option("-k", "--primary-key", help="Primary key used to compare the tables.")

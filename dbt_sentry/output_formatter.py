@@ -17,6 +17,7 @@ class OutputFormatter:
         if not format:
             buff = io.StringIO()
             table.print_table(max_rows=None, max_columns=None, output=buff)
+            table_value = buff.getvalue()
             buff.close()
             click.echo(table_value)
             click.echo("\n")
