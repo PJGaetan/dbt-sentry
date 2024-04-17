@@ -1,6 +1,6 @@
 import click
 
-from .generate import generate
+
 from .ci import ci
 from .audit import audit
 
@@ -11,7 +11,6 @@ def cli():
     pass
 
 
-cli.add_command(generate)
 cli.add_command(ci)
 cli.add_command(audit)
 

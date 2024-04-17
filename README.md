@@ -76,6 +76,7 @@ dbts ci github
         - Markdown file : https://github.com/didix21/mdutils
     - [x] stdout
     - store in dbt
+- plot graph in terminal : plotext
 
 ## Contributing
 

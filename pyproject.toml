@@ -20,7 +20,12 @@ dbt-snowflake = "^1.7.3"
 dbt-duckdb = "^1.7.3"
 click = "^8.1.7"
 gitpython = "^3.1.43"
+plotext = "^5.2.8"
+tabulate = "^0.9.0"
 
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.1.1"
 
 [build-system]
 requires = ["poetry-core"]

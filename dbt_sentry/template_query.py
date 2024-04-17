@@ -6,7 +6,7 @@ COMPARE_COLUMNS_QUERY = """
 {{ 
   audit_helper.compare_all_columns(
     a_relation=ref('PLACEHOLDER_MODEL_NAME'),
-    b_relation=api.Relation.create(database='dbt', schema='main', identifier='test_2'),
+    b_relation=RELATION_TO_REPLACE,
     exclude_columns=[EXCLUDED_COLUMNS],
     primary_key='customer_id'
   ) 
@@ -15,14 +15,14 @@ COMPARE_COLUMNS_QUERY = """
 
 COLUMNS_PROFILE_QUERY = """
 {{ audit_helper.compare_relation_columns(
-    a_relation=api.Relation.create(database='dbt', schema='main', identifier='test_2'),
+    a_relation=RELATION_TO_REPLACE,
     b_relation=ref('PLACEHOLDER_MODEL_NAME'),
 ) }}
 """
 
 COMPARE_RELATION_QUERY = """
 {{ audit_helper.compare_relations(
-    a_relation=api.Relation.create(database='dbt', schema='main', identifier='test_2'),
+    a_relation=RELATION_TO_REPLACE,
     b_relation=ref('PLACEHOLDER_MODEL_NAME'),
     exclude_columns=[EXCLUDED_COLUMNS],
     summarize=false,
@@ -32,7 +32,7 @@ COMPARE_RELATION_QUERY = """
 
 COMPARE_METRICS_QUERY = """
 {{ compare_columns_metrics(
-    a_relation=api.Relation.create(database='dbt', schema='main', identifier='test_2'),
+    a_relation=RELATION_TO_REPLACE,
     b_relation=ref('PLACEHOLDER_MODEL_NAME'),
     columns=[COLUMNS_TO_REPLACE],
     metrics=[METRICS_TO_REPLACE],
