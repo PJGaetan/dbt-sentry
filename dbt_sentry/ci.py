@@ -76,7 +76,10 @@ OUTPUT_FOLDER = "dbts-artefact"
 @settings_options
 @global_compare_options
 @global_head_options
-def generate(**kwargs):
+@click.option(
+    "--compare-branch", default=None, help="Base branch to compare. default: main or master, either is present."
+)
+def generate(compare_branch, **kwargs):
     """Generates the audit report."""
 
     # 1. [x] detect git file changed
@@ -89,7 +92,7 @@ def generate(**kwargs):
     markdown = MarkdownBuilder()
     markdown.add_heading("Audit Report")
 
-    files = get_file_changed()
+    files = get_file_changed(compare_branch)
     models = get_model_impacted(files, client)
 
     for m in models:
@@ -121,12 +124,16 @@ def generate(**kwargs):
             if row.get("in_both") == False:
                 not_in_both_columns.append(row.get("column_name"))
 
+        # TODO : add a process to do that by
+        # - discovery PRIMARY KEY
+        # - use `id`
+
         # Get model compare
-        table = client.run_compare_model(m.name, not_in_both_columns)
-        table.to_csv(f"{OUTPUT_FOLDER}/{m.name}/compare.csv")
-        markdown.add_subsubheading("Model comparison")
-        markdown.add_table(table)
-        markdown.add_line_break()
+        # table = client.run_compare_model(m.name, not_in_both_columns)
+        # table.to_csv(f"{OUTPUT_FOLDER}/{m.name}/compare.csv")
+        # markdown.add_subsubheading("Model comparison")
+        # markdown.add_table(table)
+        # markdown.add_line_break()
 
     markdown.write(f"{OUTPUT_FOLDER}/audit.md")
 
