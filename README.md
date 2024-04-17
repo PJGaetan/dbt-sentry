@@ -1,47 +1,49 @@
 # DBT testing CLI tool
-Inspired by former
-    - https://docs.piperider.io/get-started/run
-    - https://github.com/InfuseAI/piperider
 
-It uses `dbt` python biding, and make use of `dbt show` to execute inline test.
-Reuse manifest to save waiting time.
+Changing some of your dbt model, and you want to know how this is going to affect your production tables.
 
-## Compare & analyse
+`dbt-sentry` allows you to dress a profile of the model that you have changed in the CI.
+
+
+It uses `dbt` python biding, and make use of `dbt inline` to leverage dbt for querying.
+Only compile manifest once per target to save time.
+
+## Dbt Sentry commands
+
+### Compare & analyse
 
 Table profiling
 
 ```sh
-dbts audit profile stg_customers --target-compare prd
+dbts audit profile stg_customers
 ```
 
 Compare model
 
 ```sh
-dbts audit compare-model stg_customers --target-compare prd
+dbts audit compare-model stg_customers --target-compare prd --primary-key customer_id
 ```
 
 Compare row by row (you can also provide a path to the manifest to use for comparison directly).
 
 ```sh
-dbts audit compare-rows stg_customers --manifest-compare-path m.json
+dbts audit compare-rows stg_customers --manifest-compare-path manifest.json -k customer_id
 ```
 
 Compare metric /w group by 
 
 ```sh
-dbts audit metric customers "sum(number_of_orders)" last_name --dbt-path jaffle_shop --target-compare prd
+dbts audit metric customers "sum(number_of_orders)" last_name --target-compare prd
 ```
 
 Custom test, you can provide a directory with `-R`.
 ```sh
 dbts audit custom testci -R 
+dbts audit custom testci/file.sql
 ```
 
-## CI Integration
+### CI Integration
 
-IN PROGRESS
-
-- IDEAD : add mermaid graph of dbt ?
 
 ```sh
 dbts ci generate
@@ -61,24 +63,20 @@ dbts ci github
 - github
     - comment : https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28
 
-## TODO
-- better input filter 
-    - git to determine what changed
-        - get file changed
-        - capture what model are tested in a test (using `compile` and refs)
-        - run all test concerning models that could be altered based on model changed (`dbt list model1+ model2+` to get a list)
-    - parse run_result to see what was the last tables run
-    - [x] ask for two target or override manifest or specify table
-    - [x] manual model selection : -s select specific model
-
-- better ouput generation
-    - file
-        - Markdown file : https://github.com/didix21/mdutils
-    - [x] stdout
-    - store in dbt
-- plot graph in terminal : plotext
-
 ## Contributing
+
+Not yet open to external contribution, the project is not ready for it.
+
+### TODO
+- parse run_result to see what was the last tables run -> tu run right after dbt run .
+- [ ] dbt generate run custom in passed folder when model part of the query
+- [ ] Markdown file refacto using this https://github.com/didix21/mdutils ?
+- [ ] store results in db ?
+- [ ] plot graph in terminal : plotext
+- [ ] add mermaid graph of dbt
+
+
+## Development
 
 Install poetry env using.
 
@@ -88,16 +86,6 @@ poetry shell
 dbts --help
 ```
 
-
-### Testing
-
-#### audit
-
-- run dbt project in dev and prd (the project is set up to change the number between target)
-- run the test on correct files
-
-#### ci
-
-- create another branch (delete if exists), add a space to a file and commit it
-- run the test generate part
-
+### Alternatives
+- https://github.com/InfuseAI/piperider
+- data-diff
