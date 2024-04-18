@@ -3,7 +3,13 @@ import click
 from dbt_sentry.artefact.manifest import Manifest
 from dbt_sentry.client import Client
 from dbt_sentry.settings import SettingsOptions, settings_options
-from .options import global_head_options, GlobalHeadOptions, global_compare_options, GlobalCompareOptions, primary_key
+from .options import (
+    global_head_options,
+    GlobalHeadOptions,
+    global_compare_options,
+    GlobalCompareOptions,
+    primary_key,
+)
 from .output_formatter import OutputFormatter
 from .utils import get_files, File
 import os

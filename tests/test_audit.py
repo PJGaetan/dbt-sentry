@@ -26,7 +26,10 @@ def test_profile():
     [
         (
             "customer_id",
-            ("Primary key customer_id not a columns in both tables dbt.main.stg_payments && dbt.prd.stg_payments", 1),
+            (
+                "Primary key customer_id not a columns in both tables dbt.main.stg_payments && dbt.prd.stg_payments",
+                1,
+            ),
         ),
         ("payment_id", ("a: dbt.main.stg_payments && b: dbt.prd.stg_payments", 0)),
         (
@@ -64,7 +67,10 @@ def test_compare_model(test_input, expected):
     [
         (
             "customer_id",
-            ("Primary key customer_id not a columns in both tables dbt.main.stg_payments && dbt.prd.stg_payments", 1),
+            (
+                "Primary key customer_id not a columns in both tables dbt.main.stg_payments && dbt.prd.stg_payments",
+                1,
+            ),
         ),
         ("payment_id", ("a: dbt.main.stg_payments && b: dbt.prd.stg_payments", 0)),
         (
@@ -106,7 +112,10 @@ def test_compare_rows(test_input, expected):
         ),
         (
             ["last_name"],
-            ("| last_name | a_sum(number_of_o... | b_sum(number_of_o... | sum(number_of_ord... |", 0),
+            (
+                "| last_name | a_sum(number_of_o... | b_sum(number_of_o... | sum(number_of_ord... |",
+                0,
+            ),
         ),
     ],
 )
@@ -136,7 +145,10 @@ def test_metric(test_input, expected):
     [
         (
             "tests/sql/custom_query.sql",
-            ("| customer_id | first_name | last_name | first_order | most_recent_order | number_of_orders |", 0),
+            (
+                "| customer_id | first_name | last_name | first_order | most_recent_order | number_of_orders |",
+                0,
+            ),
         ),
         (
             "tests/sql/custom_query_error.sql",

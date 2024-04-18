@@ -6,9 +6,24 @@ Changing some of your dbt model, and you want to know how this is going to affec
 
 
 It uses `dbt` python biding, and make use of `dbt inline` to leverage dbt for querying.
-Only compile manifest once per target to save time.
+- Only compile manifest once per target to save time.
+- Reuse dbt profile for connection: no additional configuration to set-up.
 
 ## Dbt Sentry commands
+
+### Dependencies
+
+To run some commands, `dbts` depend on macros build by the community.
+Install them by adding them to your `packages.yml` & `dbt deps`.
+
+```
+# packages.yml
+packages:
+  - package: dbt-labs/audit_helper
+    version: 0.11.0
+  - package: data-mie/dbt_profiler
+    version: 0.8.1
+```
 
 ### Compare & analyse
 
@@ -68,12 +83,17 @@ dbts ci github
 Not yet open to external contribution, the project is not ready for it.
 
 ### TODO
-- parse run_result to see what was the last tables run -> tu run right after dbt run .
 - [ ] dbt generate run custom in passed folder when model part of the query
+- [ ] parse run_result to see what was the last tables run -> to run right after dbt run .
 - [ ] Markdown file refacto using this https://github.com/didix21/mdutils ?
 - [ ] store results in db ?
-- [ ] plot graph in terminal : plotext
 - [ ] add mermaid graph of dbt
+- [ ] get rid of external dependencies
+- [ ] configuration to avoid passing params *possibilities:* - would allow to see metrics trends in ci
+    - yaml
+    - dbt config meta
+- [ ] `dbts ci push-*` to push code by adding a comment to the MR OR template on how to do so
+- [ ] plot graph in terminal : plotext
 
 
 ## Development
@@ -87,5 +107,6 @@ dbts --help
 ```
 
 ### Alternatives
-- https://github.com/InfuseAI/piperider
-- data-diff
+- [piperider](https://github.com/InfuseAI/piperider)
+- [data-diff](https://github.com/datafold/data-diff)
+

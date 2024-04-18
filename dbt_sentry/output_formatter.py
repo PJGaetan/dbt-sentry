@@ -11,7 +11,6 @@ def grouper(iterable, n, fillvalue=None):
 
 
 class OutputFormatter:
-
     @staticmethod
     def print_agate_table(table: agate.Table, format: bool = True):
         if not format:

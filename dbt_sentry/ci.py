@@ -77,7 +77,9 @@ OUTPUT_FOLDER = "dbts-artefact"
 @global_compare_options
 @global_head_options
 @click.option(
-    "--compare-branch", default=None, help="Base branch to compare. default: main or master, either is present."
+    "--compare-branch",
+    default=None,
+    help="Base branch to compare. default: main or master, either is present.",
 )
 def generate(compare_branch, **kwargs):
     """Generates the audit report."""
