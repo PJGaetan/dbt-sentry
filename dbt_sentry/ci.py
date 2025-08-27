@@ -1,15 +1,14 @@
-import click
-from dbt_sentry.client import Client
-from dataclasses import dataclass
-
-from dbt_sentry.markdown_builder import MarkdownBuilder
-from .options import global_head_options, global_compare_options
-from dbt_sentry.settings import settings_options
-
-from enum import Enum
-import plotext as plt
-from git import Repo
 import re
+from dataclasses import dataclass
+from enum import Enum
+
+import click
+from git import Repo
+
+from dbt_sentry.client import Client
+from dbt_sentry.markdown_builder import MarkdownBuilder
+from dbt_sentry.options import global_compare_options, global_head_options
+from dbt_sentry.settings import settings_options
 
 THEME = "clear"
 MARKER = "+"

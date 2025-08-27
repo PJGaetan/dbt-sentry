@@ -1,7 +1,6 @@
-import agate
-import contextlib
 import io
-import tabulate
+
+import agate
 
 
 class MarkdownBuilder:

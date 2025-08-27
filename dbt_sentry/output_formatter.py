@@ -1,8 +1,10 @@
+import io
+from itertools import zip_longest
+
 import agate
 import click
-from itertools import zip_longest
-import io
-from .utils import Relation
+
+from dbt_sentry.utils import Relation
 
 
 def grouper(iterable, n, fillvalue=None):

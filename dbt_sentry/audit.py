@@ -1,18 +1,12 @@
+import os
+
 import click
 
-from dbt_sentry.artefact.manifest import Manifest
 from dbt_sentry.client import Client
-from dbt_sentry.settings import SettingsOptions, settings_options
-from .options import (
-    global_head_options,
-    GlobalHeadOptions,
-    global_compare_options,
-    GlobalCompareOptions,
-    primary_key,
-)
-from .output_formatter import OutputFormatter
-from .utils import get_files, File
-import os
+from dbt_sentry.options import global_compare_options, global_head_options, primary_key
+from dbt_sentry.output_formatter import OutputFormatter
+from dbt_sentry.settings import settings_options
+from dbt_sentry.utils import File, get_files
 
 
 @click.group()

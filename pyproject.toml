@@ -9,6 +9,8 @@ packages = [
     { include = "dbt_sentry" },
 ]
 
+[virtualenvs]
+in-project = true
 
 [tool.poetry.scripts]
 dbts = 'dbt_sentry.main:cli'
@@ -21,6 +23,7 @@ click = "^8.1.7"
 gitpython = "^3.1.43"
 plotext = "^5.2.8"
 tabulate = "^0.9.0"
+sqlglot = {extras = ["rs"], version = "^23.16.0"}
 
 
 [tool.poetry.group.test.dependencies]
@@ -30,6 +33,13 @@ dbt-duckdb = ">= 1.6.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+ignore = "jaffle_shop/dbt_packages/"
+addopts = "--ignore=tests/test_ci.py"
+testpaths = [
+    "tests/",
+]
 
 [tool.black]
 line-length = 120

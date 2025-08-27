@@ -1,5 +1,6 @@
-import click
 from dataclasses import dataclass
+
+import click
 
 _global_head_options = [
     click.option("-t", "--target", default=None, help="dbt target"),

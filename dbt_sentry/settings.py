@@ -1,7 +1,7 @@
-import click
 from dataclasses import dataclass
 from typing import Optional
 
+import click
 
 DEBUG = False
 DBT_PATH = "."

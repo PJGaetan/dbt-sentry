@@ -1,19 +1,20 @@
-import click
-import agate
-import dbt_sentry.settings as s
 from typing import Optional
-from dbt_sentry.artefact.manifest import Manifest
-from dbt.cli.main import dbtRunner
-from dbt_sentry.utils import run_invoke, run_invoke_capture_io, Relation
 
-from dbt_sentry.options import GlobalHeadOptions, GlobalCompareOptions
+import agate
+import click
+from dbt.cli.main import dbtRunner
+
+import dbt_sentry.settings as s
+from dbt_sentry.artefact.manifest import Manifest
+from dbt_sentry.options import GlobalCompareOptions, GlobalHeadOptions
 from dbt_sentry.template_query import (
-    PROFILE_QUERY,
-    COMPARE_MODEL_QUERY,
     COLUMNS_PROFILE_QUERY,
+    COMPARE_MODEL_QUERY,
     COMPARE_ROWS_QUERY,
+    PROFILE_QUERY,
     TEMPLATED_METRICS_JINJA_QUERY,
 )
+from dbt_sentry.utils import Relation, run_invoke, run_invoke_capture_io
 
 
 class Client:

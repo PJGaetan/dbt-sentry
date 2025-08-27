@@ -1,10 +1,12 @@
-from dbt.cli.main import dbtRunner, dbtRunnerResult
-import os
-import io
-import click
-from dataclasses import dataclass
-import dbt_sentry.settings as s
 import contextlib
+import io
+import os
+from dataclasses import dataclass
+
+import click
+from dbt.cli.main import dbtRunner, dbtRunnerResult
+
+import dbt_sentry.settings as s
 
 
 @dataclass
